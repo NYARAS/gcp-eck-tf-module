@@ -27,6 +27,68 @@ resource "google_container_node_pool" "node-pool" {
   }
 }
 
+# Bucket to use as Elastic Snapshots storage
+resource "google_storage_bucket" "demo_elastic_snapshots" {
+  project       = var.gcp_project_id
+  name          = "demo-eck-snapshots"
+  location      = "EUROPE-WEST4"
+  force_destroy = true
+  storage_class = "STANDARD"
+  versioning {
+    enabled = true
+  }
+  labels = {
+    "bucket-name" = "demo-eck-snapshots"
+  }
+}
+
+resource "google_service_account" "demo_elastic_snapshots" {
+  account_id   = "demo-elastic-snapshots"
+  display_name = "Elastic SA for snapshots."
+  description  = "Google Service Account used for My Service."
+}
+
+locals {
+  gke_namespace            = "default"
+  gke_service_account_name = "demo-elastic-snapshots"
+}
+
+resource "google_storage_bucket_iam_binding" "demo_elastic_snapshots" {
+  bucket = google_storage_bucket.demo_elastic_snapshots.name
+  role   = "roles/storage.objectAdmin"
+
+  members = [
+    "serviceAccount:${google_service_account.demo_elastic_snapshots.email}",
+  ]
+}
+
+resource "google_service_account_key" "demo_elastic_snapshots" {
+  service_account_id = google_service_account.demo_elastic_snapshots.name
+  public_key_type    = "TYPE_X509_PEM_FILE"
+  private_key_type = "TYPE_GOOGLE_CREDENTIALS_FILE"
+}
+
+resource "kubernetes_service_account" "demo_elastic_snapshots" {
+  metadata {
+    name      = local.gke_service_account_name
+    namespace = local.gke_namespace
+    annotations = {
+      "iam.gke.io/gcp-service-account" = google_service_account.demo_elastic_snapshots.email,
+
+    }
+  }
+  automount_service_account_token = false
+}
+
+# Allow the Kubernetes service account to impersonate the IAM service account
+resource "google_service_account_iam_binding" "demo_elastic_snapshots" {
+  service_account_id = google_service_account.demo_elastic_snapshots.name
+  role               = "roles/iam.workloadIdentityUser"
+
+  members = [
+    "serviceAccount:${var.gcp_project_id}.svc.id.goog[${local.gke_namespace}/${local.gke_service_account_name}]"
+  ]
+}
 
 resource "helm_release" "elastic" {
   name = "elastic-operator"
