@@ -27,3 +27,16 @@ resource "google_container_node_pool" "node-pool" {
   }
 }
 
+
+resource "helm_release" "elastic" {
+  name = "elastic-operator"
+
+  repository       = "https://helm.elastic.co"
+  chart            = "eck-operator"
+  version = var.operator_version
+  namespace        = "elastic-system"
+  create_namespace = "true"
+
+  depends_on = [google_container_cluster._, google_container_node_pool.node-pool]
+}
+
