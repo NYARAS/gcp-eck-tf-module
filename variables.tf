@@ -4,5 +4,22 @@ locals {
 
 variable "kubernetes_name" {
   type        = string
-  description  = "Please, enter your GKE cluster name"
+  description  = "GKE cluster name."
+}
+
+variable "email" {
+  type        = string
+  description = "Please, enter your email (elastic email) or a user."
+}
+
+variable "operator_version" {
+  default = "2.12.1"
+}
+
+variable "node_selector" {
+  default = "elk"
+}
+
+variable "gcp_project_id" {
+  
 }
