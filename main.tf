@@ -18,7 +18,7 @@ resource "google_container_cluster" "demo_cluster" {
 # Creating and attaching the node-pool to the Kubernetes Cluster
 resource "google_container_node_pool" "node-pool" {
   name               = "node-pool"
-  cluster            = google_container_cluster._.id
+  cluster            = google_container_cluster.demo_cluster.id
   initial_node_count = 1
 
   node_config {
@@ -27,6 +27,11 @@ resource "google_container_node_pool" "node-pool" {
   }
 }
 
+resource "kubernetes_namespace" "elastic" {
+  metadata {
+    name = "elastic"
+  }
+}
 # Bucket to use as Elastic Snapshots storage
 resource "google_storage_bucket" "demo_elastic_snapshots" {
   project       = var.gcp_project_id
@@ -49,7 +54,7 @@ resource "google_service_account" "demo_elastic_snapshots" {
 }
 
 locals {
-  gke_namespace            = "default"
+  gke_namespace            = "default" // change this to elastic namespsace
   gke_service_account_name = "demo-elastic-snapshots"
 }
 
@@ -99,7 +104,7 @@ resource "helm_release" "elastic" {
   namespace        = "elastic-system"
   create_namespace = "true"
 
-  depends_on = [google_container_cluster._, google_container_node_pool.node-pool]
+  depends_on = [google_container_cluster.demo_cluster, google_container_node_pool.node-pool]
 }
 
 resource "time_sleep" "wait_30_seconds" {
@@ -108,12 +113,22 @@ resource "time_sleep" "wait_30_seconds" {
   create_duration = "30s"
 }
 
+resource "kubernetes_secret" "demo_elastic_es_user_creds" {
+  metadata {
+    name = "${var.clusterName}-es-elastic-user"
+  }
+  type = "opaque"
+  data = {
+    elastic = var.elastic_user_password
+  }
+}
+
 resource "kubectl_manifest" "demo_elastic" {
     yaml_body = <<YAML
 apiVersion: elasticsearch.k8s.elastic.co/v1
 kind: Elasticsearch
 metadata:
-  name: demo
+  name: ${var.clusterName}
 spec:
   http:
     service:
@@ -132,7 +147,7 @@ spec:
   # secureSettings:
   # - secretName: gcs-credentials
   nodeSets:
-  - name: demo
+  - name: ${var.clusterName}
     count: 3
     config:
       node.store.allow_mmap: false
@@ -140,7 +155,7 @@ spec:
       spec:
         nodeSelector: {}
         automountServiceAccountToken: true
-        serviceAccountName: demo-elastic-snapshots // # change to use created SA
+        serviceAccountName: ${local.gke_service_account_name}
         containers:
         - name: elasticsearch
           env:
@@ -167,7 +182,7 @@ YAML
   provisioner "local-exec" {
      command = "sleep 60"
   }
-  depends_on = [helm_release.elastic, time_sleep.wait_30_seconds]
+  depends_on = [helm_release.elastic, time_sleep.wait_30_seconds, kubernetes_secret.demo_elastic_es_user_creds]
 }
 
 resource "kubectl_manifest" "demo_kibana" {
@@ -175,7 +190,7 @@ resource "kubectl_manifest" "demo_kibana" {
 apiVersion: kibana.k8s.elastic.co/v1
 kind: Kibana
 metadata:
-  name: demo
+  name: ${var.clusterName}
 spec:
   http:
     service:
@@ -192,7 +207,7 @@ spec:
   version: 8.1.3
   count: 1
   elasticsearchRef:
-    name: demo
+    name: ${var.clusterName}
   podTemplate:
     metadata:
       labels:
