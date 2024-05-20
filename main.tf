@@ -116,6 +116,7 @@ resource "time_sleep" "wait_30_seconds" {
 resource "kubernetes_secret" "demo_elastic_es_user_creds" {
   metadata {
     name = "${var.clusterName}-es-elastic-user"
+    namespace = kubernetes_namespace.elastic.metadata[0].name
   }
   type = "opaque"
   data = {
@@ -129,6 +130,7 @@ apiVersion: elasticsearch.k8s.elastic.co/v1
 kind: Elasticsearch
 metadata:
   name: ${var.clusterName}
+  namespace: ${kubernetes_namespace.elastic.metadata[0].name}
 spec:
   http:
     service:
@@ -191,6 +193,7 @@ apiVersion: kibana.k8s.elastic.co/v1
 kind: Kibana
 metadata:
   name: ${var.clusterName}
+  namespace: ${kubernetes_namespace.elastic.metadata[0].name}
 spec:
   http:
     service:
