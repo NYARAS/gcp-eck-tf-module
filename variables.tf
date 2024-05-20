@@ -23,3 +23,10 @@ variable "node_selector" {
 variable "gcp_project_id" {
   
 }
+
+variable "clusterName" {
+  default = "demo"
+}
+
+variable "elastic_user_password" {
+}
