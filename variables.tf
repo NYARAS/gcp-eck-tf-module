@@ -34,3 +34,7 @@ variable "elastic_user_password" {
 variable "kibana_url" {
   
 }
+
+variable HostEmail {
+
+}
