@@ -21,6 +21,11 @@ resource "google_container_node_pool" "node-pool" {
   cluster            = google_container_cluster.demo_cluster.id
   initial_node_count = 1
 
+  autoscaling {
+    min_node_count = 3
+    max_node_count = 4
+  }
+
   node_config {
     preemptible  = false
     machine_type = "e2-standard-4"
@@ -54,7 +59,6 @@ resource "google_service_account" "demo_elastic_snapshots" {
 }
 
 locals {
-  gke_namespace            = "default" // change this to elastic namespsace
   gke_service_account_name = "demo-elastic-snapshots"
 }
 
@@ -76,7 +80,7 @@ resource "google_service_account_key" "demo_elastic_snapshots" {
 resource "kubernetes_service_account" "demo_elastic_snapshots" {
   metadata {
     name      = local.gke_service_account_name
-    namespace = local.gke_namespace
+    namespace = kubernetes_namespace.elastic.metadata[0].name
     annotations = {
       "iam.gke.io/gcp-service-account" = google_service_account.demo_elastic_snapshots.email,
 
@@ -91,7 +95,7 @@ resource "google_service_account_iam_binding" "demo_elastic_snapshots" {
   role               = "roles/iam.workloadIdentityUser"
 
   members = [
-    "serviceAccount:${var.gcp_project_id}.svc.id.goog[${local.gke_namespace}/${local.gke_service_account_name}]"
+    "serviceAccount:${var.gcp_project_id}.svc.id.goog[${kubernetes_namespace.elastic.metadata[0].name}/${local.gke_service_account_name}]"
   ]
 }
 
@@ -117,6 +121,15 @@ resource "kubernetes_secret" "demo_elastic_es_user_creds" {
   metadata {
     name = "${var.clusterName}-es-elastic-user"
     namespace = kubernetes_namespace.elastic.metadata[0].name
+
+    labels = {
+      "name" = "${var.clusterName}-es-elastic-user"
+    }
+  }
+lifecycle {
+    ignore_changes = [
+      metadata[0].labels
+    ]
   }
   type = "opaque"
   data = {
@@ -133,18 +146,9 @@ metadata:
   namespace: ${kubernetes_namespace.elastic.metadata[0].name}
 spec:
   http:
-    service:
-     spec:
-      ports:
-      - name: http # change to use https
-        nodePort: 30300
-        port: 9200
-        protocol: TCP
-        targetPort: 9200
-      type: NodePort  
     tls:
       selfSignedCertificate:
-        disabled: true # change to use https
+        disabled: true
   version: 8.1.3
   # secureSettings:
   # - secretName: gcs-credentials
@@ -196,19 +200,13 @@ metadata:
   namespace: ${kubernetes_namespace.elastic.metadata[0].name}
 spec:
   http:
-    service:
-     spec:
-      ports:
-      - name: http # change to use https
-        port: 5601
-        protocol: TCP
-        targetPort: 5601
-      type: NodePort  
     tls:
       selfSignedCertificate:
-        disabled: true # change to use https
+        disabled: true
   version: 8.1.3
   count: 1
+  config:
+    server.publicBaseUrl: ${var.kibana_url}
   elasticsearchRef:
     name: ${var.clusterName}
   podTemplate:
@@ -220,7 +218,7 @@ spec:
       - name: kibana
         resources:
           limits:
-            memory: 1Gi
+            memory: 2Gi
             cpu: 1
 YAML
 
@@ -229,4 +227,3 @@ YAML
   }
   depends_on = [helm_release.elastic, kubectl_manifest.demo_elastic]
 }
-
