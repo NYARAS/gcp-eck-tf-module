@@ -31,7 +31,7 @@ variable "clusterName" {
 variable "elastic_user_password" {
 }
 
-variable "kibana_url" {
+variable "host" {
   
 }
 
