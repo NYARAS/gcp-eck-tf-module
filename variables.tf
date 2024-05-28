@@ -4,7 +4,7 @@ locals {
 
 variable "kubernetes_name" {
   type        = string
-  description  = "GKE cluster name."
+  description = "GKE cluster name."
 }
 
 variable "email" {
@@ -21,7 +21,7 @@ variable "node_selector" {
 }
 
 variable "gcp_project_id" {
-  
+
 }
 
 variable "clusterName" {
@@ -32,9 +32,9 @@ variable "elastic_user_password" {
 }
 
 variable "host" {
-  
+
 }
 
-variable HostEmail {
+variable "HostEmail" {
 
 }
