@@ -109,10 +109,10 @@ resource "kubernetes_ingress_v1" "demo_elastic_ingress" {
 
 resource "kubernetes_ingress_v1" "demo_kibana_ingress" {
   metadata {
-    name = "demo-kibana-ingress"
+    name      = "demo-kibana-ingress"
     namespace = kubernetes_namespace.elastic.metadata[0].name
     annotations = {
-      "cert-manager.io/cluster-issuer": "letsencrypt"
+      "cert-manager.io/cluster-issuer" : "letsencrypt"
     }
   }
 
@@ -122,7 +122,7 @@ resource "kubernetes_ingress_v1" "demo_kibana_ingress" {
       host = "kibana.${var.host}"
       http {
         path {
-          path = "/"
+          path      = "/"
           path_type = "Prefix"
           backend {
             service {
@@ -133,9 +133,9 @@ resource "kubernetes_ingress_v1" "demo_kibana_ingress" {
             }
           }
         }
-        
+
       }
-      
+
     }
     tls {
       hosts       = ["kibana.${var.host}"]
