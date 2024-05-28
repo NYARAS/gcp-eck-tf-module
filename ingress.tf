@@ -69,3 +69,77 @@ YAML
   ]
 }
 
+
+resource "kubernetes_ingress_v1" "demo_elastic_ingress" {
+  metadata {
+    name      = "demo-elastic-ingress"
+    namespace = kubernetes_namespace.elastic.metadata[0].name
+    annotations = {
+      "cert-manager.io/cluster-issuer" : "letsencrypt"
+    }
+  }
+
+  spec {
+    ingress_class_name = "nginx"
+    rule {
+      host = "elastic.${var.host}"
+      http {
+        path {
+          path      = "/"
+          path_type = "Prefix"
+          backend {
+            service {
+              name = "${var.clusterName}-es-http"
+              port {
+                number = 9200
+              }
+            }
+          }
+        }
+
+      }
+
+    }
+    tls {
+      hosts       = ["elastic.${var.host}"]
+      secret_name = "demo-es-tls-secret"
+    }
+  }
+}
+
+resource "kubernetes_ingress_v1" "demo_kibana_ingress" {
+  metadata {
+    name = "demo-kibana-ingress"
+    namespace = kubernetes_namespace.elastic.metadata[0].name
+    annotations = {
+      "cert-manager.io/cluster-issuer": "letsencrypt"
+    }
+  }
+
+  spec {
+    ingress_class_name = "nginx"
+    rule {
+      host = "kibana.${var.host}"
+      http {
+        path {
+          path = "/"
+          path_type = "Prefix"
+          backend {
+            service {
+              name = "${var.clusterName}-kb-http"
+              port {
+                number = 5601
+              }
+            }
+          }
+        }
+        
+      }
+      
+    }
+    tls {
+      hosts       = ["kibana.${var.host}"]
+      secret_name = "demo-kibana-tls-secret"
+    }
+  }
+}
