@@ -38,7 +38,45 @@ server:
       cpu: 500m
       memory: 2Gi
 alertmanager:
-  enabled: false
+  enabled: true
+  config:
+    # enabled: true
+    global:
+      resolve_timeout: 1m
+      slack_api_url: '<SLACK_URL>'
+    templates:
+      - '/etc/alertmanager/*.tmpl'
+
+    receivers:
+    - name: 'prometheus'
+      slack_configs:
+      - channel: '#prometheus'
+        send_resolved: true
+        icon_url: https://avatars3.githubusercontent.com/u/3380462
+        title: |-
+          [{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] {{ .CommonLabels.alertname }} for {{ .CommonLabels.job }}
+          {{- if gt (len .CommonLabels) (len .GroupLabels) -}}
+            {{" "}}(
+            {{- with .CommonLabels.Remove .GroupLabels.Names }}
+              {{- range $index, $label := .SortedPairs -}}
+                {{ if $index }}, {{ end }}
+                {{- $label.Name }}="{{ $label.Value -}}"
+              {{- end }}
+            {{- end -}}
+            )
+          {{- end }}
+        text: >-
+          {{ range .Alerts -}}
+          *Alert:* {{ .Annotations.title }}{{ if .Labels.severity }} - `{{ .Labels.severity }}`{{ end }}
+          *Description:* {{ .Annotations.description }}
+          *Details:*
+            {{ range .Labels.SortedPairs }} • *{{ .Name }}:* `{{ .Value }}`
+            {{ end }}
+          {{ end }}
+
+    route:
+      receiver: 'prometheus'
+
 pushgateway:
   enabled: false
 prometheus:
@@ -329,6 +367,7 @@ serverFiles:
             replacement: $1
             action: replace
   rules: {}
+
 EOF
   ]
 }
