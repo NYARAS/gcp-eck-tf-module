@@ -366,8 +366,37 @@ serverFiles:
             target_label: kubernetes_pod_name
             replacement: $1
             action: replace
-  rules: {}
-
+  rules:
+    groups:
+      - name: Deployment
+        rules:
+        - alert: Deployment at 0 Replicas
+          annotations:
+            summary: Deployment {{$labels.deployment}} in {{$labels.namespace}} is currently having no pods running
+          expr: |
+            sum(kube_deployment_status_replicas{pod_template_hash=""}) by (deployment,namespace)  < 1
+          for: 1m
+          labels:
+            team: devops
+            severity: "critical"
+        - alert: HPA Scaling Limited  
+          annotations: 
+            summary: HPA named {{$labels.hpa}} in {{$labels.namespace}} namespace has reached scaling limited state
+          expr: | 
+            (sum(kube_hpa_status_condition{condition="ScalingLimited",status="true"}) by (hpa,namespace)) == 1
+          for: 1m
+          labels: 
+            team: devops
+            severity: "critical"
+        - alert: HPA at MaxCapacity 
+          annotations: 
+            summary: HPA named {{$labels.hpa}} in {{$labels.namespace}} namespace is running at Max Capacity
+          expr: | 
+            ((sum(kube_hpa_spec_max_replicas) by (hpa,namespace)) - (sum(kube_hpa_status_current_replicas) by (hpa,namespace))) == 0
+          for: 1m
+          labels: 
+            team: devops
+            severity: "critical"
 EOF
   ]
 }
