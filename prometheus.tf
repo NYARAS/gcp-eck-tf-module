@@ -397,6 +397,15 @@ serverFiles:
           labels: 
             team: devops
             severity: "critical"
+        - alert: PrometheusPV
+        expr: >
+          sum(kubelet_volume_stats_used_bytes{persistentvolumeclaim="prometheus-prometheus-kube-prometheus-prometheus-db-prometheus-prometheus-kube-prometheus-prometheus-0"})
+          / sum(kubelet_volume_stats_capacity_bytes{persistentvolumeclaim="prometheus-prometheus-kube-prometheus-prometheus-db-prometheus-prometheus-kube-prometheus-prometheus-0"})
+          > 0.8
+        labels:
+          severity: critical
+        annotations:
+          description: Prometheus PV disk usage is greater than 80%.
 EOF
   ]
 }
