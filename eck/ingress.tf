@@ -82,7 +82,7 @@ resource "kubernetes_ingress_v1" "demo_elastic_ingress" {
   spec {
     ingress_class_name = "nginx"
     rule {
-      host = "elastic.${var.host}"
+      host = "elastic.${var.fqdn}"
       http {
         path {
           path      = "/"
@@ -101,7 +101,7 @@ resource "kubernetes_ingress_v1" "demo_elastic_ingress" {
 
     }
     tls {
-      hosts       = ["elastic.${var.host}"]
+      hosts       = ["elastic.${var.fqdn}"]
       secret_name = "demo-es-tls-secret"
     }
   }
@@ -119,7 +119,7 @@ resource "kubernetes_ingress_v1" "demo_kibana_ingress" {
   spec {
     ingress_class_name = "nginx"
     rule {
-      host = "kibana.${var.host}"
+      host = "kibana.${var.fqdn}"
       http {
         path {
           path      = "/"
@@ -138,7 +138,7 @@ resource "kubernetes_ingress_v1" "demo_kibana_ingress" {
 
     }
     tls {
-      hosts       = ["kibana.${var.host}"]
+      hosts       = ["kibana.${var.fqdn}"]
       secret_name = "demo-kibana-tls-secret"
     }
   }
