@@ -1,5 +1,5 @@
 resource "google_container_cluster" "demo_cluster" {
-  name     = var.kubernetes_name
+  name     = var.cluster_name
   location = local.region
 
   workload_identity_config {
@@ -56,10 +56,6 @@ resource "google_service_account" "demo_elastic_snapshots" {
   account_id   = "demo-elastic-snapshots"
   display_name = "Elastic SA for snapshots."
   description  = "Google Service Account used for My Service."
-}
-
-locals {
-  gke_service_account_name = "demo-elastic-snapshots"
 }
 
 resource "google_storage_bucket_iam_binding" "demo_elastic_snapshots" {
@@ -206,7 +202,7 @@ spec:
   version: 8.1.3
   count: 1
   config:
-    server.publicBaseUrl: "https://kibana.${var.host}"
+    server.publicBaseUrl: "https://kibana.${var.fqdn}"
   elasticsearchRef:
     name: ${var.clusterName}
   podTemplate:
