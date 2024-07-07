@@ -40,7 +40,7 @@ This module creates ECK with basic license hence some features are not available
     Update the bucket name with yours.
 - Update `terraform.tfvars.example` file to `terraform.tfvars`. ⚠️ _DO NOT COMMIT THIS FILE_.
 
-    Replace all the default values defines in `variables.tf` with your own values.
+    Replace all the default values defined in `variables.tf` with your own values.
 
 ### Init and Apply
 
@@ -70,3 +70,7 @@ When you are done with everything and you want to cleanup and destroy your infra
 ```sh
  terraform destroy -auto-approve
  ```
+
+## Authors and Maintainers
+
+* Calvine Otieno / @calvineotieno
