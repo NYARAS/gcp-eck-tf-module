@@ -73,4 +73,4 @@ When you are done with everything and you want to cleanup and destroy your infra
 
 ## Authors and Maintainers
 
-* Calvine Otieno / @NYARAS
+* Calvine Otieno /[Calvine Otieno](https://github.com/NYARAS)
